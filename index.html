@@ -1,0 +1,2289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Калькулятор Pro</title>
+<style>
+  :root{
+    --bg: #000000;
+    --btn-bg: #1a1a1a;
+    --btn-text: #ffffff;
+    --btn-op-bg: #2a2a2a;
+    --btn-op-text: #f0a050;
+    --btn-eq-bg: #f0a050;
+    --btn-eq-text: #000000;
+    --btn-func-bg: #101010;
+    --btn-func-text: #a0a0a0;
+    --display-bg: #000000;
+    --display-text: #ffffff;
+    --accent: #f0a050;
+    --rule: #1a1a1a;
+    --blur: 0px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overscroll-behavior:none;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;
+    background:var(--bg);
+    color:var(--display-text);
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+    transition:background .3s ease;
+  }
+  #bgLayer{
+    position:fixed;inset:0;z-index:0;
+    background-size:cover;background-position:center;
+    filter:blur(var(--blur));
+    opacity:.5;
+    transition:filter .3s ease;
+    pointer-events:none;
+  }
+  #app{
+    width:100%;height:100%;max-width:560px;max-height:100vh;
+    position:relative;z-index:1;
+    display:flex;flex-direction:column;
+    background:rgba(0,0,0,.6);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  }
+  @media (min-width:561px){
+    #app{max-height:960px;border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06) inset;margin:20px}
+  }
+
+  /* DISPLAY */
+  .display-wrap{
+    flex:0 0 auto;
+    padding:12px 18px 10px;
+    background:var(--display-bg);
+    border-bottom:1px solid var(--rule);
+    position:relative;
+    min-height:120px;
+    display:flex;flex-direction:column;
+  }
+  .display-top{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:4px;
+    font-size:11px;letter-spacing:1.5px;
+    color:var(--btn-func-text);
+    text-transform:uppercase;
+    min-height:16px;
+  }
+  .display-mem{font-weight:600;cursor:pointer;padding:2px 6px;border-radius:4px;transition:all .15s ease}
+  .display-mem:active{background:var(--btn-func-bg)}
+  .display-mem.on{color:var(--accent)}
+  .display-mode{display:flex;gap:6px}
+  .display-mode .badge{
+    padding:2px 6px;border:1px solid var(--rule);border-radius:3px;
+    cursor:pointer;transition:all .15s ease;
+  }
+  .display-mode .badge:active{transform:scale(.95)}
+  .display-mode .badge.on{border-color:var(--accent);color:var(--accent)}
+
+  .display-expr{
+    flex:0 0 auto;
+    font-size:13px;
+    color:var(--btn-func-text);
+    text-align:right;
+    overflow-x:auto;white-space:nowrap;
+    padding:2px 2px 4px;
+    scrollbar-width:none;
+    min-height:20px;
+    font-family:"SF Mono","Roboto Mono",monospace;
+    letter-spacing:.3px;
+  }
+  .display-expr::-webkit-scrollbar{display:none}
+
+  .display-main{
+    flex:1;
+    display:flex;align-items:flex-end;justify-content:flex-end;
+    overflow-x:auto;white-space:nowrap;
+    scrollbar-width:none;
+    font-family:"SF Mono","Roboto Mono",monospace;
+    padding:2px 0;
+    cursor:pointer;
+  }
+  .display-main::-webkit-scrollbar{display:none}
+  .display-main .num{
+    font-size:54px;
+    font-weight:300;
+    letter-spacing:-1px;
+    line-height:1;
+    color:var(--display-text);
+    transition:font-size .15s ease;
+    display:inline-block;
+  }
+  .display-main .num.small{font-size:38px}
+  .display-main .num.tiny{font-size:26px}
+  .display-main .num.error{color:#ff5555;font-size:32px}
+
+  /* MODES BAR */
+  .modesbar{
+    flex:0 0 auto;
+    display:flex;gap:6px;padding:8px 12px 6px;
+    overflow-x:auto;scrollbar-width:none;
+    border-bottom:1px solid var(--rule);
+  }
+  .modesbar::-webkit-scrollbar{display:none}
+  .mode-chip{
+    flex:0 0 auto;
+    padding:6px 12px;
+    background:var(--btn-func-bg);
+    color:var(--btn-func-text);
+    border:1px solid var(--rule);
+    border-radius:100px;
+    font-size:11px;letter-spacing:1px;text-transform:uppercase;
+    cursor:pointer;
+    transition:all .15s ease;
+    font-weight:500;
+    font-family:inherit;
+  }
+  .mode-chip:active{transform:scale(.95)}
+  .mode-chip.on{
+    background:var(--accent);
+    color:var(--btn-eq-text);
+    border-color:var(--accent);
+  }
+
+  /* KEYPAD */
+  .keypad-wrap{
+    flex:1 1 auto;
+    display:flex;flex-direction:column;
+    padding:6px 8px 10px;
+    overflow:hidden;
+    gap:6px;
+    min-height:0;
+  }
+
+  .keypad{
+    flex:1;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    grid-template-rows:repeat(5,1fr);
+    gap:7px;
+    min-height:0;
+  }
+  .btn{
+    border:none;
+    border-radius:14px;
+    background:var(--btn-bg);
+    color:var(--btn-text);
+    font-family:inherit;
+    font-size:24px;
+    font-weight:400;
+    cursor:pointer;
+    transition:transform .08s ease, filter .08s ease;
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+    overflow:hidden;
+    -webkit-user-select:none;user-select:none;
+    padding:0;
+    line-height:1;
+    min-height:0;
+  }
+  .btn:active{transform:scale(.94);filter:brightness(1.4)}
+  .btn.op{background:var(--btn-op-bg);color:var(--btn-op-text);font-weight:500}
+  .btn.func{background:var(--btn-func-bg);color:var(--btn-func-text);font-size:17px}
+  .btn.eq{background:var(--btn-eq-bg);color:var(--btn-eq-text);font-weight:600;font-size:26px}
+  .btn.num{font-weight:400}
+  .btn .ic{
+    width:24px;height:24px;
+    display:block;
+    stroke:currentColor;fill:none;
+    stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;
+  }
+  .btn.func .ic{width:20px;height:20px}
+  .btn.eq .ic{width:26px;height:26px}
+
+  .eng-keypad{
+    flex:0 0 auto;
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    grid-auto-rows:42px;
+    gap:5px;
+    max-height:0;
+    overflow:hidden;
+    transition:max-height .35s ease, margin .35s ease;
+    margin-bottom:0;
+  }
+  .eng-keypad.on{
+    max-height:500px;
+    margin-bottom:6px;
+  }
+  .eng-btn{
+    border:none;
+    border-radius:10px;
+    background:var(--btn-func-bg);
+    color:var(--btn-func-text);
+    font-family:"SF Mono","Roboto Mono",monospace;
+    font-size:12.5px;
+    font-weight:500;
+    cursor:pointer;
+    transition:transform .08s ease, filter .08s ease;
+    display:flex;align-items:center;justify-content:center;
+    -webkit-user-select:none;user-select:none;
+    padding:0;
+  }
+  .eng-btn:active{transform:scale(.94);filter:brightness(1.4)}
+  .eng-btn.accent{color:var(--accent)}
+
+  /* PANELS */
+  .panel{
+    position:absolute;inset:0;
+    background:var(--bg);
+    z-index:20;
+    display:none;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .panel.on{display:flex}
+
+  .panel-head{
+    flex:0 0 auto;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 20px;
+    border-bottom:1px solid var(--rule);
+    gap:12px;
+  }
+  .panel-head h2{
+    font-size:18px;font-weight:600;letter-spacing:.5px;
+    flex:1;
+  }
+  .panel-head .close{
+    width:36px;height:36px;
+    border:none;border-radius:50%;
+    background:var(--btn-func-bg);color:var(--btn-func-text);
+    font-size:20px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    flex:0 0 auto;
+    font-family:inherit;
+    transition:transform .1s ease;
+  }
+  .panel-head .close:active{transform:scale(.9)}
+
+  .panel-body{
+    flex:1;
+    overflow-y:auto;
+    padding:16px 20px 40px;
+    scrollbar-width:thin;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* HISTORY */
+  .hist-item{
+    padding:12px 14px;
+    border-bottom:1px solid var(--rule);
+    cursor:pointer;
+    transition:background .15s ease;
+    border-radius:8px;
+  }
+  .hist-item:active{background:rgba(255,255,255,.05)}
+  .hist-item .expr{
+    font-size:12px;
+    color:var(--btn-func-text);
+    font-family:"SF Mono",monospace;
+    margin-bottom:4px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .hist-item .res{
+    font-size:19px;
+    font-weight:500;
+    font-family:"SF Mono",monospace;
+    color:var(--display-text);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .empty-msg{
+    text-align:center;padding:60px 20px;
+    color:var(--btn-func-text);
+    font-size:14px;font-style:italic;
+  }
+
+  /* SETTINGS */
+  .setting{
+    padding:14px 0;
+    border-bottom:1px solid var(--rule);
+  }
+  .setting:last-child{border-bottom:none}
+  .setting-label{
+    font-size:14px;font-weight:500;
+    margin-bottom:10px;
+    display:flex;justify-content:space-between;align-items:center;
+    gap:12px;
+  }
+  .setting-label .val{
+    font-family:"SF Mono",monospace;
+    font-size:12px;
+    color:var(--btn-func-text);
+    font-weight:400;
+  }
+  .color-row{
+    display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  }
+  .color-input{
+    width:60px;height:38px;
+    border:none;border-radius:8px;
+    background:transparent;
+    cursor:pointer;
+    padding:2px;
+    border:1px solid var(--rule);
+  }
+
+  .theme-row{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+  }
+  .theme-card{
+    padding:10px 6px;
+    border-radius:10px;
+    border:2px solid transparent;
+    cursor:pointer;
+    text-align:center;
+    font-size:10px;letter-spacing:.5px;
+    transition:all .15s ease;
+    background:var(--btn-func-bg);
+    color:var(--btn-func-text);
+    font-family:inherit;
+    -webkit-user-select:none;user-select:none;
+  }
+  .theme-card:active{transform:scale(.95)}
+  .theme-card.on{border-color:var(--accent);color:var(--accent)}
+  .theme-preview{
+    width:100%;height:22px;border-radius:4px;margin-bottom:6px;
+    display:flex;gap:2px;overflow:hidden;
+  }
+  .theme-preview span{flex:1;height:100%}
+
+  .toggle{
+    width:48px;height:28px;
+    background:var(--btn-func-bg);
+    border-radius:100px;
+    position:relative;
+    cursor:pointer;
+    transition:background .2s ease;
+    flex:0 0 auto;
+    border:1px solid var(--rule);
+  }
+  .toggle::after{
+    content:"";
+    position:absolute;top:2px;left:2px;
+    width:22px;height:22px;border-radius:50%;
+    background:var(--btn-func-text);
+    transition:all .2s ease;
+  }
+  .toggle.on{background:var(--accent);border-color:var(--accent)}
+  .toggle.on::after{left:22px;background:var(--btn-eq-text)}
+
+  .slider-row{display:flex;align-items:center;gap:12px}
+  .slider{
+    flex:1;
+    -webkit-appearance:none;appearance:none;
+    height:4px;border-radius:2px;
+    background:var(--rule);
+    outline:none;
+  }
+  .slider::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:20px;height:20px;border-radius:50%;
+    background:var(--accent);
+    cursor:pointer;
+  }
+  .slider::-moz-range-thumb{
+    width:20px;height:20px;border-radius:50%;
+    background:var(--accent);
+    cursor:pointer;border:none;
+  }
+
+  .set-btn{
+    width:100%;height:44px;
+    border:none;border-radius:10px;
+    background:var(--btn-func-bg);
+    color:var(--display-text);
+    font-size:13px;
+    font-family:inherit;
+    cursor:pointer;
+    transition:transform .1s ease,filter .1s ease;
+    -webkit-user-select:none;user-select:none;
+  }
+  .set-btn:active{transform:scale(.98);filter:brightness(1.3)}
+  .set-btn.danger{background:#aa2222;color:#fff}
+
+  /* TOOLS MENU */
+  .tools-menu{
+    position:absolute;inset:0;
+    background:rgba(0,0,0,.85);
+    z-index:15;
+    display:none;
+    align-items:center;justify-content:center;
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    padding:20px;
+  }
+  .tools-menu.on{display:flex}
+  .tools-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    max-width:440px;width:100%;
+    max-height:90vh;
+    overflow-y:auto;
+    padding:4px;
+  }
+  .tool-card{
+    padding:16px 6px;
+    background:var(--btn-func-bg);
+    border:1px solid var(--rule);
+    border-radius:14px;
+    cursor:pointer;
+    text-align:center;
+    transition:transform .1s ease,background .15s ease;
+    color:var(--display-text);
+    -webkit-user-select:none;user-select:none;
+  }
+  .tool-card:active{transform:scale(.95);background:var(--btn-bg)}
+  .tool-card .ic{
+    width:24px;height:24px;margin:0 auto 8px;
+    stroke:var(--accent);fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;
+    display:block;
+  }
+  .tool-card .name{
+    font-size:10.5px;letter-spacing:.5px;
+    color:var(--btn-func-text);
+    text-transform:uppercase;
+    font-weight:500;
+  }
+  .tools-menu .close{
+    position:absolute;top:16px;right:16px;
+    width:36px;height:36px;border-radius:50%;
+    background:var(--btn-func-bg);color:var(--btn-func-text);
+    border:none;font-size:20px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-family:inherit;
+  }
+  .tools-menu .close:active{transform:scale(.9)}
+
+  /* TOAST */
+  .toast-wrap{
+    position:fixed;bottom:24px;left:0;right:0;
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    pointer-events:none;z-index:100;padding:0 24px;
+  }
+  .toast{
+    background:rgba(255,255,255,.12);
+    color:var(--display-text);
+    font-size:13px;
+    padding:10px 18px;
+    border-radius:20px;
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    animation:toastIn .25s ease;
+    max-width:90%;
+    text-align:center;
+  }
+  @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .toast.out{animation:toastOut .25s ease forwards}
+  @keyframes toastOut{to{opacity:0;transform:translateY(-10px)}}
+
+  /* INPUT STYLE */
+  .field{
+    width:100%;height:44px;
+    padding:0 14px;margin-top:6px;
+    font-size:16px;
+    background:var(--btn-func-bg);
+    color:var(--display-text);
+    border:1px solid var(--rule);
+    border-radius:10px;
+    font-family:inherit;
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  .field:focus{border-color:var(--accent)}
+  .field.mono{font-family:"SF Mono","Roboto Mono",monospace}
+  textarea.field{height:80px;padding:12px;resize:none;line-height:1.5}
+
+  .tool-label{display:block;font-size:14px;font-weight:500}
+  .tool-row{display:flex;flex-direction:column;gap:14px}
+  .tool-actions{display:flex;gap:8px}
+  .tool-btn{
+    flex:1;height:40px;
+    background:var(--btn-func-bg);
+    color:var(--display-text);
+    border:1px solid var(--rule);
+    border-radius:10px;
+    font-size:13px;
+    font-family:inherit;
+    cursor:pointer;
+    -webkit-user-select:none;user-select:none;
+  }
+  .tool-btn:active{transform:scale(.97);filter:brightness(1.3)}
+  .tool-result{
+    font-family:"SF Mono","Roboto Mono",monospace;
+    font-size:14px;line-height:1.9;
+    padding:14px;
+    background:var(--btn-func-bg);
+    border-radius:10px;
+  }
+  .tool-result b{color:var(--display-text)}
+  .tool-result .accent{color:var(--accent)}
+  .tool-result .neg{color:#ff6666}
+</style>
+</head>
+<body>
+
+<div id="bgLayer"></div>
+
+<div id="app">
+
+  <div class="display-wrap">
+    <div class="display-top">
+      <span class="display-mem" id="memInd" title="память">M</span>
+      <div class="display-mode">
+        <span class="badge" id="angBadge" title="углы">DEG</span>
+        <span class="badge" id="baseBadge" title="система счисления">DEC</span>
+      </div>
+    </div>
+    <div class="display-expr" id="exprEl"></div>
+    <div class="display-main" id="mainEl">
+      <span class="num" id="numEl">0</span>
+    </div>
+  </div>
+
+  <div class="modesbar" id="modesBar">
+    <button class="mode-chip on" data-tool="calc">обычный</button>
+    <button class="mode-chip" data-tool="tools">инструменты</button>
+    <button class="mode-chip" data-tool="history">история</button>
+    <button class="mode-chip" data-tool="settings">настройки</button>
+    <button class="mode-chip" data-tool="eng">инженерный</button>
+  </div>
+
+  <div class="eng-keypad" id="engPad">
+    <button class="eng-btn accent" data-ins="sin(">sin</button>
+    <button class="eng-btn accent" data-ins="cos(">cos</button>
+    <button class="eng-btn accent" data-ins="tan(">tan</button>
+    <button class="eng-btn accent" data-ins="asin(">asin</button>
+    <button class="eng-btn accent" data-ins="acos(">acos</button>
+    <button class="eng-btn accent" data-ins="atan(">atan</button>
+    <button class="eng-btn accent" data-ins="log(">log</button>
+    <button class="eng-btn accent" data-ins="ln(">ln</button>
+    <button class="eng-btn accent" data-ins="log2(">log₂</button>
+    <button class="eng-btn accent" data-ins="sqrt(">√</button>
+    <button class="eng-btn" data-ins="^2">x²</button>
+    <button class="eng-btn" data-ins="^3">x³</button>
+    <button class="eng-btn" data-ins="^">xʸ</button>
+    <button class="eng-btn" data-ins="cbrt(">∛</button>
+    <button class="eng-btn" data-ins="!">n!</button>
+    <button class="eng-btn accent" data-ins="pi">π</button>
+    <button class="eng-btn accent" data-ins="e">e</button>
+    <button class="eng-btn" data-ins="abs(">|x|</button>
+    <button class="eng-btn" data-ins=" mod ">mod</button>
+    <button class="eng-btn" data-ins="rand()">rand</button>
+    <button class="eng-btn" data-ins="10^(">10ˣ</button>
+    <button class="eng-btn" data-ins="e^(">eˣ</button>
+    <button class="eng-btn" data-ins="sinh(">sinh</button>
+    <button class="eng-btn" data-ins="cosh(">cosh</button>
+    <button class="eng-btn" data-ins="tanh(">tanh</button>
+    <button class="eng-btn" data-ins="(">(</button>
+    <button class="eng-btn" data-ins=")">)</button>
+    <button class="eng-btn" data-ins=",">,</button>
+    <button class="eng-btn" data-ins="toDeg(">→deg</button>
+    <button class="eng-btn" data-ins="toRad(">→rad</button>
+  </div>
+
+  <div class="keypad-wrap">
+    <div class="keypad" id="keypad">
+      <button class="btn func" data-act="clear">AC</button>
+      <button class="btn func" data-act="del">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M21 5H8l-5 7 5 7h13a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+      </button>
+      <button class="btn func" data-act="percent">
+        <svg class="ic" viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+      </button>
+      <button class="btn op" data-act="op" data-op="/">÷</button>
+
+      <button class="btn num" data-num="7">7</button>
+      <button class="btn num" data-num="8">8</button>
+      <button class="btn num" data-num="9">9</button>
+      <button class="btn op" data-act="op" data-op="*">×</button>
+
+      <button class="btn num" data-num="4">4</button>
+      <button class="btn num" data-num="5">5</button>
+      <button class="btn num" data-num="6">6</button>
+      <button class="btn op" data-act="op" data-op="-">−</button>
+
+      <button class="btn num" data-num="1">1</button>
+      <button class="btn num" data-num="2">2</button>
+      <button class="btn num" data-num="3">3</button>
+      <button class="btn op" data-act="op" data-op="+">+</button>
+
+      <button class="btn func" data-act="paren">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M8 4C6 7 6 17 8 20"/><path d="M16 4C18 7 18 17 16 20"/></svg>
+      </button>
+      <button class="btn num" data-num="0">0</button>
+      <button class="btn num" data-num=".">.</button>
+      <button class="btn eq" data-act="eq">
+        <svg class="ic" viewBox="0 0 24 24"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="tools-menu" id="toolsMenu">
+    <button class="close" id="toolsClose">✕</button>
+    <div class="tools-grid">
+      <div class="tool-card" data-panel="credit">
+        <svg class="ic" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        <div class="name">кредит</div>
+      </div>
+      <div class="tool-card" data-panel="tip">
+        <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10"/></svg>
+        <div class="name">чаевые</div>
+      </div>
+      <div class="tool-card" data-panel="discount">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0l-8.2-8.2V4h8.4l9.8 9.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
+        <div class="name">скидки</div>
+      </div>
+      <div class="tool-card" data-panel="date">
+        <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+        <div class="name">даты</div>
+      </div>
+      <div class="tool-card" data-panel="base">
+        <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><text x="6" y="15" font-family="monospace" font-size="8" fill="currentColor" stroke="none">01</text></svg>
+        <div class="name">системы</div>
+      </div>
+      <div class="tool-card" data-panel="stats">
+        <svg class="ic" viewBox="0 0 24 24"><line x1="4" y1="20" x2="4" y2="10"/><line x1="10" y1="20" x2="10" y2="4"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="20" y1="20" x2="20" y2="8"/></svg>
+        <div class="name">статистика</div>
+      </div>
+      <div class="tool-card" data-panel="convert">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M7 4l-4 4 4 4"/><path d="M3 8h14"/><path d="M17 12l4 4-4 4"/><path d="M21 16H7"/></svg>
+        <div class="name">конвертер</div>
+      </div>
+      <div class="tool-card" data-panel="prog">
+        <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/></svg>
+        <div class="name">программист</div>
+      </div>
+      <div class="tool-card" data-panel="units">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="9"/></svg>
+        <div class="name">единицы</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panelHistory">
+    <div class="panel-head">
+      <h2>История</h2>
+      <button class="close" data-close="panelHistory">✕</button>
+    </div>
+    <div class="panel-body" id="historyBody">
+      <div class="empty-msg">пока пусто</div>
+    </div>
+  </div>
+
+  <div class="panel" id="panelSettings">
+    <div class="panel-head">
+      <h2>Настройки</h2>
+      <button class="close" data-close="panelSettings">✕</button>
+    </div>
+    <div class="panel-body">
+
+      <div class="setting">
+        <div class="setting-label">Тема</div>
+        <div class="theme-row" id="themeRow">
+          <div class="theme-card on" data-theme="oled">
+            <div class="theme-preview"><span style="background:#000"></span><span style="background:#1a1a1a"></span><span style="background:#f0a050"></span></div>
+            OLED
+          </div>
+          <div class="theme-card" data-theme="dark">
+            <div class="theme-preview"><span style="background:#0f1720"></span><span style="background:#1e2938"></span><span style="background:#4ac6d8"></span></div>
+            Dark
+          </div>
+          <div class="theme-card" data-theme="light">
+            <div class="theme-preview"><span style="background:#f5f5f5"></span><span style="background:#e0e0e0"></span><span style="background:#ff8a3d"></span></div>
+            Light
+          </div>
+          <div class="theme-card" data-theme="vapor">
+            <div class="theme-preview"><span style="background:#1a1030"></span><span style="background:#3a1060"></span><span style="background:#ff5cc8"></span></div>
+            Vapor
+          </div>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div class="setting-label">Фон приложения <span class="val" id="valBg">#000000</span></div>
+        <div class="color-row"><input type="color" class="color-input" id="colBg" value="#000000"></div>
+      </div>
+
+      <div class="setting">
+        <div class="setting-label">Кнопки <span class="val" id="valBtn">#1a1a1a</span></div>
+        <div class="color-row"><input type="color" class="color-input" id="colBtn" value="#1a1a1a"></div>
+      </div>
+
+      <div class="setting">
+        <div class="setting-label">Текст кнопок <span class="val" id="valBtnText">#ffffff</span></div>
+        <div class="color-row"><input type="color" class="color-input" id="colBtnText" value="#ffffff"></div>
+      </div>
+
+      <div class="setting">
+        <div class="setting-label">Операторы <span class="val" id="valOp">#f0a050</span></div>
+        <div class="color-row"><input type="color" class="color-input" id="colOp" value="#f0a050"></div>
+      </div>
+
+      <div class="setting">
+        <div class="setting-label">Кнопка равно <span class="val" id="valEq">#f0a050</span></div>
+        <div class="color-row"><input type="color" class="color-input" id="colEq" value="#f0a050"></div>
+      </div>
+
+      <div class="setting">
+        <div class="setting-label">Функции <span class="val" id="valFunc">#101010</span></div>
+        <div class="color-row"><input type="color" class="color-input" id="colFunc" value="#101010"></div>
+      </div>
+
+      <div class="setting">
+        <div class="setting-label">Фоновое изображение</div>
+        <div class="color-row">
+          <input type="file" id="bgUpload" accept="image/*" style="display:none">
+          <button class="set-btn" style="flex:1" onclick="document.getElementById('bgUpload').click()">загрузить</button>
+          <button class="set-btn" style="flex:1" id="bgClear">убрать</button>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div class="setting-label">Размытие фона <span class="val" id="valBlur">0px</span></div>
+        <div class="slider-row"><input type="range" class="slider" id="blurSlider" min="0" max="40" value="0"></div>
+      </div>
+
+      <div class="setting">
+        <div class="setting-label">Звук кнопок</div>
+        <div class="toggle on" id="soundToggle"></div>
+      </div>
+
+      <div class="setting">
+        <div class="setting-label">Громкость <span class="val" id="valVol">50%</span></div>
+        <div class="slider-row"><input type="range" class="slider" id="volSlider" min="0" max="100" value="50"></div>
+      </div>
+
+      <div class="setting">
+        <div class="setting-label">Инженерный режим</div>
+        <div class="toggle" id="engToggle"></div>
+      </div>
+
+      <div class="setting">
+        <div class="setting-label">Сброс</div>
+        <button class="set-btn danger" id="resetAll">сбросить всё</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="panel" id="panelTool">
+    <div class="panel-head">
+      <h2 id="toolTitle">Инструмент</h2>
+      <button class="close" data-close="panelTool">✕</button>
+    </div>
+    <div class="panel-body" id="toolBody"></div>
+  </div>
+
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ============================================================
+  // AUDIO
+  // ============================================================
+  var AC = null;
+  var soundEnabled = true;
+  var volume = 0.5;
+
+  function initAudio(){
+    if(AC) return AC;
+    var C = window.AudioContext || window.webkitAudioContext;
+    if(!C) return null;
+    try{ AC = new C(); }catch(e){ return null; }
+    return AC;
+  }
+
+  function playClick(type){
+    if(!soundEnabled) return;
+    var ac = initAudio();
+    if(!ac) return;
+    if(ac.state === "suspended"){ ac.resume().catch(function(){}); }
+
+    try{
+      var t = ac.currentTime;
+      var osc = ac.createOscillator();
+      var g = ac.createGain();
+      g.gain.value = 0;
+      osc.connect(g);
+      g.connect(ac.destination);
+
+      if(type === "num"){
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, t);
+        osc.frequency.exponentialRampToValueAtTime(660, t + 0.05);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(volume * 0.08, t + 0.005);
+        g.gain.linearRampToValueAtTime(0.0001, t + 0.06);
+        osc.start(t); osc.stop(t + 0.07);
+      } else if(type === "op"){
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(440, t);
+        osc.frequency.exponentialRampToValueAtTime(620, t + 0.08);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(volume * 0.12, t + 0.005);
+        g.gain.linearRampToValueAtTime(0.0001, t + 0.1);
+        osc.start(t); osc.stop(t + 0.12);
+      } else if(type === "eq"){
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(660, t);
+        osc.frequency.exponentialRampToValueAtTime(990, t + 0.1);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(volume * 0.15, t + 0.005);
+        g.gain.linearRampToValueAtTime(0.0001, t + 0.12);
+        osc.start(t); osc.stop(t + 0.14);
+
+        var osc2 = ac.createOscillator();
+        var g2 = ac.createGain();
+        osc2.connect(g2); g2.connect(ac.destination);
+        osc2.type = "sine";
+        osc2.frequency.setValueAtTime(1320, t + 0.06);
+        g2.gain.setValueAtTime(0.0001, t + 0.06);
+        g2.gain.linearRampToValueAtTime(volume * 0.08, t + 0.07);
+        g2.gain.linearRampToValueAtTime(0.0001, t + 0.16);
+        osc2.start(t + 0.06); osc2.stop(t + 0.18);
+      } else if(type === "clear"){
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(330, t);
+        osc.frequency.exponentialRampToValueAtTime(110, t + 0.15);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(volume * 0.1, t + 0.005);
+        g.gain.linearRampToValueAtTime(0.0001, t + 0.16);
+        osc.start(t); osc.stop(t + 0.18);
+      } else if(type === "err"){
+        osc.type = "square";
+        osc.frequency.setValueAtTime(160, t);
+        osc.frequency.exponentialRampToValueAtTime(120, t + 0.15);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(volume * 0.1, t + 0.005);
+        g.gain.linearRampToValueAtTime(0.0001, t + 0.16);
+        osc.start(t); osc.stop(t + 0.18);
+      }
+    }catch(e){}
+  }
+
+  // ============================================================
+  // STATE
+  // ============================================================
+  var state = {
+    expression: "",
+    result: "0",
+    history: [],
+    memory: 0,
+    memActive: false,
+    angle: "DEG",
+    base: "DEC",       // DEC / HEX / OCT / BIN — отображение результата
+    engMode: false,
+    soundOn: true,
+    volume: 0.5,
+    theme: "oled",
+    customColors: {},
+    blur: 0,
+    lastResult: 0,
+    justEvaluated: false,
+    editingButton: null
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var exprEl = $("exprEl");
+  var numEl = $("numEl");
+  var mainEl = $("mainEl");
+  var keypad = $("keypad");
+  var engPad = $("engPad");
+  var modesBar = $("modesBar");
+  var toolsMenu = $("toolsMenu");
+  var toastWrap = $("toastWrap");
+  var memInd = $("memInd");
+  var angBadge = $("angBadge");
+  var baseBadge = $("baseBadge");
+
+  function toast(msg){
+    var el = document.createElement("div");
+    el.className = "toast";
+    el.textContent = msg;
+    toastWrap.appendChild(el);
+    setTimeout(function(){
+      el.classList.add("out");
+      setTimeout(function(){ el.remove(); }, 250);
+    }, 1500);
+  }
+
+  // ============================================================
+  // STORAGE
+  // ============================================================
+  var STORE = "calc.pro.v2";
+  var BTN_STORE = "calc.buttons.v2";
+
+  function save(){
+    try{
+      localStorage.setItem(STORE, JSON.stringify({
+        history: state.history.slice(0, 100),
+        memory: state.memory,
+        angle: state.angle,
+        base: state.base,
+        engMode: state.engMode,
+        soundOn: state.soundOn,
+        volume: state.volume,
+        theme: state.theme,
+        customColors: state.customColors,
+        blur: state.blur
+      }));
+    }catch(e){}
+  }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORE);
+      if(!raw) return;
+      var d = JSON.parse(raw);
+      if(Array.isArray(d.history)) state.history = d.history;
+      if(typeof d.memory === "number") state.memory = d.memory;
+      if(d.angle) state.angle = d.angle;
+      if(d.base) state.base = d.base;
+      if(typeof d.engMode === "boolean") state.engMode = d.engMode;
+      if(typeof d.soundOn === "boolean") state.soundOn = d.soundOn;
+      if(typeof d.volume === "number") state.volume = d.volume;
+      if(d.theme) state.theme = d.theme;
+      if(d.customColors && typeof d.customColors === "object") state.customColors = d.customColors;
+      if(typeof d.blur === "number") state.blur = d.blur;
+    }catch(e){}
+  }
+
+  // ============================================================
+  // FORMAT
+  // ============================================================
+  function formatResult(n){
+    if(typeof n !== "number") return "0";
+    if(!isFinite(n)) return "Error";
+    if(isNaN(n)) return "Error";
+
+    var abs = Math.abs(n);
+
+    // Отображение в разных системах счисления для целых
+    if(state.base !== "DEC" && Number.isInteger(n) && abs < 1e15){
+      var s;
+      if(state.base === "HEX") s = n.toString(16).toUpperCase();
+      else if(state.base === "OCT") s = n.toString(8);
+      else if(state.base === "BIN") s = n.toString(2);
+      else s = n.toString(10);
+      return s;
+    }
+
+    // Экспоненциальный вид для очень больших/малых
+    if(abs >= 1e15 || (abs < 1e-9 && abs > 0)){
+      return n.toExponential(8);
+    }
+
+    // Округление для длинных чисел
+    var s = n.toString();
+    if(s.indexOf(".") !== -1 && s.replace(".", "").length > 14){
+      s = parseFloat(n.toPrecision(12)).toString();
+    }
+    return s;
+  }
+
+  function formatExpression(s){
+    // замена операторов на красивые символы для отображения
+    return s
+      .replace(/\*/g, " × ")
+      .replace(/\//g, " ÷ ")
+      .replace(/\+/g, " + ")
+      .replace(/(?<=[\d)])\s*-\s*(?=[\d(])/g, " − ")
+      .replace(/\^/g, " ^ ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  // ============================================================
+  // DISPLAY
+  // ============================================================
+  function updateDisplay(){
+    exprEl.textContent = state.expression ? formatExpression(state.expression) : "";
+
+    var r = String(state.result);
+    numEl.className = "num";
+    if(r.length > 16) numEl.classList.add("tiny");
+    else if(r.length > 11) numEl.classList.add("small");
+    if(r === "Error" || r === "Infinity" || r === "NaN") numEl.classList.add("error");
+    numEl.textContent = r;
+
+    memInd.classList.toggle("on", state.memActive);
+    angBadge.textContent = state.angle;
+    angBadge.classList.toggle("on", state.angle !== "DEG");
+    baseBadge.textContent = state.base;
+    baseBadge.classList.toggle("on", state.base !== "DEC");
+
+    // Автоскролл к концу
+    requestAnimationFrame(function(){
+      mainEl.scrollLeft = mainEl.scrollWidth;
+      exprEl.scrollLeft = exprEl.scrollWidth;
+    });
+  }
+
+  function updateToggles(){
+    $("engToggle").classList.toggle("on", state.engMode);
+    engPad.classList.toggle("on", state.engMode);
+    $("soundToggle").classList.toggle("on", state.soundOn);
+  }
+
+  // ============================================================
+  // THEMES
+  // ============================================================
+  var THEMES = {
+    oled: {
+      "--bg": "#000000","--btn-bg": "#1a1a1a","--btn-text": "#ffffff",
+      "--btn-op-bg": "#2a2a2a","--btn-op-text": "#f0a050",
+      "--btn-eq-bg": "#f0a050","--btn-eq-text": "#000000",
+      "--btn-func-bg": "#101010","--btn-func-text": "#a0a0a0",
+      "--display-bg": "#000000","--display-text": "#ffffff",
+      "--accent": "#f0a050","--rule": "#1a1a1a"
+    },
+    dark: {
+      "--bg": "#0f1720","--btn-bg": "#1e2938","--btn-text": "#e8eef5",
+      "--btn-op-bg": "#2a3a50","--btn-op-text": "#4ac6d8",
+      "--btn-eq-bg": "#4ac6d8","--btn-eq-text": "#0f1720",
+      "--btn-func-bg": "#172233","--btn-func-text": "#8fa5bb",
+      "--display-bg": "#0a1119","--display-text": "#ffffff",
+      "--accent": "#4ac6d8","--rule": "#1e2938"
+    },
+    light: {
+      "--bg": "#f5f5f5","--btn-bg": "#ffffff","--btn-text": "#1a1a1a",
+      "--btn-op-bg": "#ffefe0","--btn-op-text": "#d96000",
+      "--btn-eq-bg": "#ff8a3d","--btn-eq-text": "#ffffff",
+      "--btn-func-bg": "#e8e8e8","--btn-func-text": "#606060",
+      "--display-bg": "#ffffff","--display-text": "#0a0a0a",
+      "--accent": "#ff8a3d","--rule": "#e0e0e0"
+    },
+    vapor: {
+      "--bg": "#1a1030","--btn-bg": "#2a1a48","--btn-text": "#f0e0ff",
+      "--btn-op-bg": "#3a1060","--btn-op-text": "#ff5cc8",
+      "--btn-eq-bg": "#ff5cc8","--btn-eq-text": "#1a1030",
+      "--btn-func-bg": "#221540","--btn-func-text": "#a080d0",
+      "--display-bg": "#100820","--display-text": "#ffffff",
+      "--accent": "#ff5cc8","--rule": "#2a1a48"
+    }
+  };
+
+  function applyTheme(name){
+    state.theme = name;
+    var theme = THEMES[name] || THEMES.oled;
+    var root = document.documentElement;
+    Object.keys(theme).forEach(function(k){
+      root.style.setProperty(k, theme[k]);
+    });
+    // кастомные цвета поверх
+    Object.keys(state.customColors).forEach(function(k){
+      root.style.setProperty(k, state.customColors[k]);
+    });
+    document.querySelectorAll(".theme-card").forEach(function(el){
+      el.classList.toggle("on", el.dataset.theme === name);
+    });
+    // синхронизация color inputs
+    syncColorInput("colBg", "--bg");
+    syncColorInput("colBtn", "--btn-bg");
+    syncColorInput("colBtnText", "--btn-text");
+    syncColorInput("colOp", "--btn-op-text");
+    syncColorInput("colEq", "--btn-eq-bg");
+    syncColorInput("colFunc", "--btn-func-bg");
+  }
+
+  function syncColorInput(inputId, varName){
+    var el = document.getElementById(inputId);
+    if(!el) return;
+    var val = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    if(val && val.charAt(0) === "#" && /^#[0-9a-f]{6}$/i.test(val)){
+      el.value = val;
+      var labelId = "val" + inputId.charAt(3).toUpperCase() + inputId.slice(4);
+      var label = document.getElementById(labelId);
+      if(label) label.textContent = val;
+    }
+  }
+
+  // ============================================================
+  // PARSER
+  // ============================================================
+  function tokenize(expr){
+    var tokens = [];
+    var i = 0;
+    var s = expr.replace(/\s+/g, "");
+
+    // Порядок важен: длинные функции раньше коротких
+    var funcs = [
+      "asin","acos","atan","sinh","cosh","tanh",
+      "sqrt","cbrt","log2","log","ln","abs","sin","cos","tan",
+      "toDeg","toRad","rand"
+    ];
+
+    var consts = { "pi": Math.PI, "e": Math.E };
+
+    while(i < s.length){
+      var c = s[i];
+
+      if(/[0-9.]/.test(c)){
+        var num = "";
+        var dotCount = 0;
+        while(i < s.length && /[0-9.]/.test(s[i])){
+          if(s[i] === "."){
+            dotCount++;
+            if(dotCount > 1) throw new Error("double dot");
+          }
+          num += s[i]; i++;
+        }
+        tokens.push({ type: "num", value: parseFloat(num) });
+        continue;
+      }
+
+      var matched = false;
+      // функции и константы
+      for(var f = 0; f < funcs.length; f++){
+        var fn = funcs[f];
+        if(s.substr(i, fn.length) === fn){
+          tokens.push({ type: "func", value: fn });
+          i += fn.length;
+          matched = true;
+          break;
+        }
+      }
+      if(matched) continue;
+
+      // константы
+      for(var ck in consts){
+        if(s.substr(i, ck.length) === ck){
+          tokens.push({ type: "num", value: consts[ck] });
+          i += ck.length;
+          matched = true;
+          break;
+        }
+      }
+      if(matched) continue;
+
+      // операторы
+      if("+-*/^%".indexOf(c) !== -1){
+        tokens.push({ type: "op", value: c });
+        i++;
+        continue;
+      }
+
+      if(c === "("){ tokens.push({ type: "lparen" }); i++; continue; }
+      if(c === ")"){ tokens.push({ type: "rparen" }); i++; continue; }
+      if(c === ","){ tokens.push({ type: "comma" }); i++; continue; }
+      if(c === "!"){ tokens.push({ type: "fact" }); i++; continue; }
+
+      throw new Error("bad: " + c);
+    }
+
+    // Неявное умножение: num lparen → num * lparen
+    // num num → num * num
+    // rparen num → ) * num
+    // rparen lparen → ) * (
+    var result = [];
+    for(var j = 0; j < tokens.length; j++){
+      var cur = tokens[j];
+      var prev = result[result.length - 1];
+
+      if(prev){
+        var prevEnd = (prev.type === "num" || prev.type === "rparen" || prev.type === "fact");
+        var curStart = (cur.type === "num" || cur.type === "lparen" || cur.type === "func");
+        if(prevEnd && curStart){
+          result.push({ type: "op", value: "*" });
+        }
+      }
+      result.push(cur);
+    }
+
+    return result;
+  }
+
+  function toRPN(tokens){
+    var output = [];
+    var stack = [];
+
+    var prec = { "+": 1, "-": 1, "*": 2, "/": 2, "%": 2, "^": 4 };
+    var rightAssoc = { "^": true };
+
+    for(var i = 0; i < tokens.length; i++){
+      var t = tokens[i];
+
+      if(t.type === "num"){
+        output.push(t);
+      } else if(t.type === "func"){
+        stack.push(t);
+      } else if(t.type === "fact"){
+        output.push(t);  // постфиксный оператор
+      } else if(t.type === "comma"){
+        while(stack.length && stack[stack.length-1].type !== "lparen"){
+          output.push(stack.pop());
+        }
+        if(!stack.length) throw new Error("comma outside func");
+      } else if(t.type === "op"){
+        while(stack.length){
+          var top = stack[stack.length-1];
+          if(top.type === "op"){
+            var topP = prec[top.value];
+            var curP = prec[t.value];
+            if((rightAssoc[t.value] && topP > curP) ||
+               (!rightAssoc[t.value] && topP >= curP)){
+              output.push(stack.pop());
+              continue;
+            }
+          }
+          break;
+        }
+        stack.push(t);
+      } else if(t.type === "lparen"){
+        stack.push(t);
+      } else if(t.type === "rparen"){
+        while(stack.length && stack[stack.length-1].type !== "lparen"){
+          output.push(stack.pop());
+        }
+        if(!stack.length) throw new Error("mismatch )");
+        stack.pop();
+        // после ) может идти функция
+        if(stack.length && stack[stack.length-1].type === "func"){
+          output.push(stack.pop());
+        }
+      }
+    }
+
+    while(stack.length){
+      var op = stack.pop();
+      if(op.type === "lparen") throw new Error("mismatch (");
+      output.push(op);
+    }
+
+    return output;
+  }
+
+  function evalRPN(rpn){
+    var stack = [];
+
+    function toRad(v){
+      if(state.angle === "DEG") return v * Math.PI / 180;
+      if(state.angle === "GRAD") return v * Math.PI / 200;
+      return v;
+    }
+    function fromRad(v){
+      if(state.angle === "DEG") return v * 180 / Math.PI;
+      if(state.angle === "GRAD") return v * 200 / Math.PI;
+      return v;
+    }
+
+    for(var i = 0; i < rpn.length; i++){
+      var t = rpn[i];
+
+      if(t.type === "num"){
+        stack.push(t.value);
+      } else if(t.type === "op"){
+        if(stack.length < 2) throw new Error("stack");
+        var b = stack.pop();
+        var a = stack.pop();
+        var r;
+        switch(t.value){
+          case "+": r = a + b; break;
+          case "-": r = a - b; break;
+          case "*": r = a * b; break;
+          case "/":
+            if(b === 0) throw new Error("÷0");
+            r = a / b; break;
+          case "%": r = a % b; break;
+          case "^": r = Math.pow(a, b); break;
+          default: throw new Error("op");
+        }
+        stack.push(r);
+      } else if(t.type === "fact"){
+        if(stack.length < 1) throw new Error("stack");
+        var n = stack.pop();
+        if(n < 0) throw new Error("negative fact");
+        if(n !== Math.floor(n)) throw new Error("bad fact");
+        if(n > 170) throw new Error("too big");
+        var res = 1;
+        for(var k = 2; k <= n; k++) res *= k;
+        stack.push(res);
+      } else if(t.type === "func"){
+        if(stack.length < 1) throw new Error("stack");
+        var v = stack.pop();
+        var out;
+        switch(t.value){
+          case "sin": out = Math.sin(toRad(v)); break;
+          case "cos": out = Math.cos(toRad(v)); break;
+          case "tan": out = Math.tan(toRad(v)); break;
+          case "asin":
+            if(v < -1 || v > 1) throw new Error("domain");
+            out = fromRad(Math.asin(v)); break;
+          case "acos":
+            if(v < -1 || v > 1) throw new Error("domain");
+            out = fromRad(Math.acos(v)); break;
+          case "atan": out = fromRad(Math.atan(v)); break;
+          case "sinh": out = Math.sinh(v); break;
+          case "cosh": out = Math.cosh(v); break;
+          case "tanh": out = Math.tanh(v); break;
+          case "log":
+            if(v <= 0) throw new Error("log domain");
+            out = Math.log10(v); break;
+          case "ln":
+            if(v <= 0) throw new Error("ln domain");
+            out = Math.log(v); break;
+          case "log2":
+            if(v <= 0) throw new Error("log2 domain");
+            out = Math.log2(v); break;
+          case "sqrt":
+            if(v < 0) throw new Error("sqrt domain");
+            out = Math.sqrt(v); break;
+          case "cbrt": out = Math.cbrt(v); break;
+          case "abs": out = Math.abs(v); break;
+          case "rand": out = Math.random(); break;
+          case "toDeg": out = v * 180 / Math.PI; break;
+          case "toRad": out = v * Math.PI / 180; break;
+          default: throw new Error("func: " + t.value);
+        }
+        stack.push(out);
+      }
+    }
+
+    if(stack.length !== 1) throw new Error("stack end");
+    return stack[0];
+  }
+
+  function evaluateExpression(expr){
+    var tokens = tokenize(expr);
+    var rpn = toRPN(tokens);
+    return evalRPN(rpn);
+  }
+
+  // ============================================================
+  // CONTROL
+  // ============================================================
+  function insert(str){
+    if(state.justEvaluated){
+      if(/[0-9.]/.test(str)){
+        state.expression = "";
+        state.result = "0";
+      }
+      state.justEvaluated = false;
+    }
+    state.expression += str;
+    previewUpdate();
+  }
+
+  function previewUpdate(){
+    // Пробуем посчитать в реальном времени, но не падаем если не выходит
+    var expr = state.expression;
+    if(!expr){ state.result = "0"; updateDisplay(); return; }
+
+    // Только если заканчивается на число или закрытую скобку
+    if(!/[0-9)!]/.test(expr.charAt(expr.length - 1))){
+      // если заканчивается на открытую скобку или оператор — не считаем
+      try{
+        // проверим, сбалансированы ли скобки
+        var open = (expr.match(/\(/g) || []).length;
+        var close = (expr.match(/\)/g) || []).length;
+        if(open !== close) return;
+        var r = evaluateExpression(expr);
+        state.result = formatResult(r);
+      }catch(e){}
+      updateDisplay();
+      return;
+    }
+
+    try{
+      var r = evaluateExpression(expr);
+      state.result = formatResult(r);
+    }catch(e){}
+    updateDisplay();
+  }
+
+  function evaluate(){
+    var expr = state.expression.trim();
+    if(!expr){ state.result = "0"; updateDisplay(); return; }
+
+    try{
+      var r = evaluateExpression(expr);
+      var formatted = formatResult(r);
+      state.result = formatted;
+      state.lastResult = r;
+      state.justEvaluated = true;
+
+      state.history.unshift({
+        expr: expr,
+        res: formatted,
+        ts: Date.now()
+      });
+      if(state.history.length > 100) state.history.length = 100;
+      save();
+      playClick("eq");
+    }catch(err){
+      state.result = "Error";
+      playClick("err");
+    }
+    updateDisplay();
+  }
+
+  function clearAll(){
+    state.expression = "";
+    state.result = "0";
+    state.justEvaluated = false;
+    playClick("clear");
+    updateDisplay();
+  }
+
+  function deleteLast(){
+    if(state.justEvaluated){
+      state.justEvaluated = false;
+    }
+    if(state.expression.length > 0){
+      state.expression = state.expression.slice(0, -1);
+    }
+    if(!state.expression){
+      state.result = "0";
+    } else {
+      try{
+        var r = evaluateExpression(state.expression);
+        state.result = formatResult(r);
+      }catch(e){}
+    }
+    playClick("num");
+    updateDisplay();
+  }
+
+  function insertParen(){
+    var open = (state.expression.match(/\(/g) || []).length;
+    var close = (state.expression.match(/\)/g) || []).length;
+    var last = state.expression.charAt(state.expression.length - 1);
+
+    // если последний символ — оператор или пусто, ставим (
+    if(!state.expression || /[+\-*/^(, ]/.test(last)){
+      insert("(");
+    }
+    // если открытых больше — закрываем
+    else if(open > close && /[0-9)!]/.test(last)){
+      insert(")");
+    }
+    else{
+      insert("(");
+    }
+    playClick("op");
+  }
+
+  function insertPercent(){
+    // Конвертация "a + b%" в "a + b/100*a" — только если есть знак перед %
+    var e = state.expression;
+    if(!e){ return; }
+
+    // Ищем последний оператор
+    var match = e.match(/([+\-*/])\s*([0-9.]+)$/);
+    if(match){
+      // есть оператор перед числом — процент от последнего результата
+      var op = match[1];
+      var num = match[2];
+      if(op === "+" || op === "-"){
+        // процент от предыдущего значения
+        try{
+          var base = evaluateExpression(e.slice(0, e.length - num.length - 1));
+          var percent = base * parseFloat(num) / 100;
+          var sign = op === "+" ? "+" : "-";
+          // Заменяем на вычисленное
+          state.expression = e.slice(0, e.length - num.length) + percent.toString();
+        }catch(err){
+          insert("%");
+        }
+      } else {
+        // для * и / просто делим на 100
+        insert("%");
+      }
+    } else {
+      insert("%");
+    }
+    playClick("op");
+  }
+
+  keypad.addEventListener("click", function(e){
+    var btn = e.target.closest(".btn");
+    if(!btn) return;
+    if(btn.dataset.act === "eq"){ evaluate(); return; }
+    if(btn.dataset.act === "clear"){ clearAll(); return; }
+    if(btn.dataset.act === "del"){ deleteLast(); return; }
+    if(btn.dataset.act === "paren"){ insertParen(); return; }
+    if(btn.dataset.act === "percent"){ insertPercent(); return; }
+    if(btn.dataset.num !== undefined){ insert(btn.dataset.num); playClick("num"); return; }
+    if(btn.dataset.act === "op"){ insert(btn.dataset.op); playClick("op"); return; }
+  });
+
+  engPad.addEventListener("click", function(e){
+    var btn = e.target.closest(".eng-btn");
+    if(!btn) return;
+    var ins = btn.dataset.ins;
+    if(!ins) return;
+    if(state.justEvaluated){
+      state.justEvaluated = false;
+    }
+    insert(ins);
+    playClick("op");
+  });
+
+  // ============================================================
+  // MODES BAR
+  // ============================================================
+  modesBar.addEventListener("click", function(e){
+    var chip = e.target.closest(".mode-chip");
+    if(!chip) return;
+    var tool = chip.dataset.tool;
+
+    if(tool === "calc"){
+      closeAllPanels();
+    } else if(tool === "tools"){
+      toolsMenu.classList.add("on");
+    } else if(tool === "history"){
+      openHistory();
+    } else if(tool === "settings"){
+      openPanel("panelSettings");
+    } else if(tool === "eng"){
+      state.engMode = !state.engMode;
+      updateToggles();
+      save();
+      updateChipsActive();
+    }
+  });
+
+  function closeAllPanels(){
+    document.querySelectorAll(".panel").forEach(function(p){ p.classList.remove("on"); });
+    toolsMenu.classList.remove("on");
+    updateChipsActive();
+  }
+
+  function updateChipsActive(){
+    document.querySelectorAll(".mode-chip").forEach(function(el){
+      var t = el.dataset.tool;
+      if(t === "eng"){
+        el.classList.toggle("on", state.engMode);
+      } else if(t === "calc"){
+        // активна только если никакая панель не открыта
+        var anyOpen = document.querySelector(".panel.on") || toolsMenu.classList.contains("on");
+        el.classList.toggle("on", !anyOpen);
+      } else {
+        el.classList.remove("on");
+      }
+    });
+  }
+
+  function openPanel(id){
+    document.querySelectorAll(".panel").forEach(function(p){
+      p.classList.toggle("on", p.id === id);
+    });
+    toolsMenu.classList.remove("on");
+    updateChipsActive();
+  }
+
+  document.querySelectorAll("[data-close]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.getElementById(btn.dataset.close).classList.remove("on");
+      updateChipsActive();
+    });
+  });
+
+  // ============================================================
+  // HISTORY
+  // ============================================================
+  function openHistory(){
+    var body = $("historyBody");
+    if(state.history.length === 0){
+      body.innerHTML = '<div class="empty-msg">пока пусто</div>';
+    } else {
+      var html = "";
+      state.history.forEach(function(item, i){
+        html += '<div class="hist-item" data-idx="' + i + '">';
+        html += '<div class="expr">' + escapeHtml(formatExpression(item.expr)) + '</div>';
+        html += '<div class="res">' + escapeHtml(item.res) + '</div>';
+        html += '</div>';
+      });
+      body.innerHTML = html;
+      body.querySelectorAll(".hist-item").forEach(function(el){
+        el.addEventListener("click", function(){
+          var idx = parseInt(el.dataset.idx, 10);
+          var it = state.history[idx];
+          if(!it) return;
+          state.expression = it.expr;
+          state.result = it.res;
+          state.justEvaluated = true;
+          updateDisplay();
+          document.getElementById("panelHistory").classList.remove("on");
+          updateChipsActive();
+          playClick("num");
+        });
+      });
+    }
+    openPanel("panelHistory");
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c];
+    });
+  }
+
+  // ============================================================
+  // SETTINGS
+  // ============================================================
+  function bindColor(inputId, varName, labelId){
+    $(inputId).addEventListener("input", function(e){
+      state.customColors[varName] = e.target.value;
+      document.documentElement.style.setProperty(varName, e.target.value);
+      $(labelId).textContent = e.target.value;
+      save();
+    });
+  }
+  bindColor("colBg", "--bg", "valBg");
+  bindColor("colBtn", "--btn-bg", "valBtn");
+  bindColor("colBtnText", "--btn-text", "valBtnText");
+  bindColor("colOp", "--btn-op-text", "valOp");
+  bindColor("colEq", "--btn-eq-bg", "valEq");
+  bindColor("colEq", "--accent", "valEq");
+  bindColor("colFunc", "--btn-func-bg", "valFunc");
+
+  document.querySelectorAll(".theme-card").forEach(function(el){
+    el.addEventListener("click", function(){
+      state.customColors = {};  // очищаем кастомные
+      applyTheme(el.dataset.theme);
+      save();
+    });
+  });
+
+  $("bgUpload").addEventListener("change", function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    if(file.size > 5000000){ toast("файл слишком большой"); return; }
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        $("bgLayer").style.backgroundImage = "url(" + ev.target.result + ")";
+        // можно сохранить в localStorage, но при 5MB уже переполнение
+      }catch(err){ toast("не поместилось"); }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  $("bgClear").addEventListener("click", function(){
+    $("bgLayer").style.backgroundImage = "";
+    $("bgUpload").value = "";
+  });
+
+  $("blurSlider").addEventListener("input", function(e){
+    state.blur = parseInt(e.target.value, 10);
+    document.documentElement.style.setProperty("--blur", state.blur + "px");
+    $("valBlur").textContent = state.blur + "px";
+    save();
+  });
+
+  $("soundToggle").addEventListener("click", function(){
+    state.soundOn = !state.soundOn;
+    soundEnabled = state.soundOn;
+    updateToggles();
+    save();
+  });
+
+  $("volSlider").addEventListener("input", function(e){
+    state.volume = parseInt(e.target.value, 10) / 100;
+    volume = state.volume;
+    $("valVol").textContent = e.target.value + "%";
+    save();
+  });
+
+  $("engToggle").addEventListener("click", function(){
+    state.engMode = !state.engMode;
+    updateToggles();
+    save();
+    updateChipsActive();
+  });
+
+  $("resetAll").addEventListener("click", function(){
+    if(!confirm("Сбросить всё? История, настройки, память.")) return;
+    try{ localStorage.removeItem(STORE); localStorage.removeItem(BTN_STORE); }catch(e){}
+    location.reload();
+  });
+
+  // ============================================================
+  // TOOLS
+  // ============================================================
+  toolsMenu.addEventListener("click", function(e){
+    var card = e.target.closest(".tool-card");
+    if(!card) return;
+    var panel = card.dataset.panel;
+    toolsMenu.classList.remove("on");
+    openToolPanel(panel);
+  });
+
+  $("toolsClose").addEventListener("click", function(){
+    toolsMenu.classList.remove("on");
+    updateChipsActive();
+  });
+
+  function openToolPanel(id){
+    var title = $("toolTitle");
+    var body = $("toolBody");
+    var tools = {
+      credit: { title: "Кредит", fn: toolCredit },
+      tip: { title: "Чаевые", fn: toolTip },
+      discount: { title: "Скидки", fn: toolDiscount },
+      date: { title: "Даты", fn: toolDate },
+      base: { title: "Системы счисления", fn: toolBase },
+      stats: { title: "Статистика", fn: toolStats },
+      convert: { title: "Конвертер", fn: toolConvert },
+      prog: { title: "Программист", fn: toolProg },
+      units: { title: "Единицы", fn: toolUnits }
+    };
+    var t = tools[id];
+    if(!t) return;
+    title.textContent = t.title;
+    body.innerHTML = "";
+    t.fn(body);
+    openPanel("panelTool");
+  }
+
+  function toolCredit(body){
+    body.innerHTML =
+      '<div class="tool-row">' +
+      '<label class="tool-label">Сумма кредита<input type="number" id="crSum" value="1000000" class="field" inputmode="numeric"></label>' +
+      '<label class="tool-label">Ставка, % годовых<input type="number" id="crRate" value="12" step="0.1" class="field" inputmode="decimal"></label>' +
+      '<label class="tool-label">Срок, месяцев<input type="number" id="crTerm" value="60" class="field" inputmode="numeric"></label>' +
+      '<button class="set-btn" id="crCalc" style="background:var(--accent);color:var(--btn-eq-text);font-weight:600">рассчитать</button>' +
+      '<div class="tool-result" id="crResult">введи данные и нажми рассчитать</div>' +
+      '</div>';
+
+    $("crCalc").addEventListener("click", function(){
+      var sum = parseFloat($("crSum").value);
+      var rate = parseFloat($("crRate").value);
+      var n = parseInt($("crTerm").value, 10);
+      if(!sum || sum <= 0 || !n || n <= 0 || isNaN(rate)){ $("crResult").textContent = "проверь поля"; return; }
+      var monthlyRate = rate / 100 / 12;
+      var payment, total;
+      if(monthlyRate === 0){
+        payment = sum / n;
+        total = sum;
+      } else {
+        var p = Math.pow(1 + monthlyRate, n);
+        payment = sum * monthlyRate * p / (p - 1);
+        total = payment * n;
+      }
+      var over = total - sum;
+      $("crResult").innerHTML =
+        '<div>Платёж/мес: <b class="accent">' + payment.toFixed(2) + ' ₽</b></div>' +
+        '<div>Всего: <b>' + total.toFixed(2) + ' ₽</b></div>' +
+        '<div>Переплата: <b class="neg">' + over.toFixed(2) + ' ₽</b></div>';
+    });
+  }
+
+  function toolTip(body){
+    body.innerHTML =
+      '<div class="tool-row">' +
+      '<label class="tool-label">Сумма счёта<input type="number" id="tpSum" value="1000" class="field" inputmode="decimal"></label>' +
+      '<label class="tool-label">Чаевые, %<input type="number" id="tpPct" value="15" class="field" inputmode="numeric"></label>' +
+      '<div class="tool-actions">' +
+        '<button class="tool-btn tipquick" data-p="10">10%</button>' +
+        '<button class="tool-btn tipquick" data-p="15">15%</button>' +
+        '<button class="tool-btn tipquick" data-p="20">20%</button>' +
+      '</div>' +
+      '<div class="tool-result" id="tpResult">—</div>' +
+      '</div>';
+
+    function calc(){
+      var sum = parseFloat($("tpSum").value) || 0;
+      var pct = parseFloat($("tpPct").value) || 0;
+      var tip = sum * pct / 100;
+      var total = sum + tip;
+      $("tpResult").innerHTML =
+        '<div>Чаевые: <b class="accent">' + tip.toFixed(2) + ' ₽</b></div>' +
+        '<div>Итого: <b>' + total.toFixed(2) + ' ₽</b></div>';
+    }
+    $("tpSum").addEventListener("input", calc);
+    $("tpPct").addEventListener("input", calc);
+    body.querySelectorAll(".tipquick").forEach(function(b){
+      b.addEventListener("click", function(){
+        $("tpPct").value = b.dataset.p;
+        calc();
+      });
+    });
+    calc();
+  }
+
+  function toolDiscount(body){
+    body.innerHTML =
+      '<div class="tool-row">' +
+      '<label class="tool-label">Цена<input type="number" id="dcPrice" value="1000" class="field" inputmode="decimal"></label>' +
+      '<label class="tool-label">Скидка, %<input type="number" id="dcPct" value="20" class="field" inputmode="numeric"></label>' +
+      '<div class="tool-result" id="dcResult">—</div>' +
+      '</div>';
+
+    function calc(){
+      var price = parseFloat($("dcPrice").value) || 0;
+      var pct = parseFloat($("dcPct").value) || 0;
+      var disc = price * pct / 100;
+      var final = price - disc;
+      $("dcResult").innerHTML =
+        '<div>Скидка: <b class="neg">-' + disc.toFixed(2) + ' ₽</b></div>' +
+        '<div>К оплате: <b class="accent">' + final.toFixed(2) + ' ₽</b></div>';
+    }
+    $("dcPrice").addEventListener("input", calc);
+    $("dcPct").addEventListener("input", calc);
+    calc();
+  }
+
+  function toolDate(body){
+    var today = new Date();
+    var iso = today.toISOString().slice(0, 10);
+    body.innerHTML =
+      '<div class="tool-row">' +
+      '<div style="padding:12px;background:var(--btn-func-bg);border-radius:10px;font-size:14px">Сегодня: <b>' + today.toLocaleDateString("ru-RU") + '</b></div>' +
+      '<label class="tool-label">Дата 1<input type="date" id="d1" value="' + iso + '" class="field"></label>' +
+      '<label class="tool-label">Дата 2<input type="date" id="d2" value="' + iso + '" class="field"></label>' +
+      '<div class="tool-result" id="dateResult">—</div>' +
+      '</div>';
+
+    function calc(){
+      var a = new Date($("d1").value);
+      var b = new Date($("d2").value);
+      if(isNaN(a.getTime()) || isNaN(b.getTime())) return;
+      var diff = Math.abs(b - a);
+      var days = Math.round(diff / 86400000);
+      var weeks = Math.floor(days / 7);
+      var months = Math.floor(days / 30.44);
+      var years = (days / 365.25).toFixed(2);
+      $("dateResult").innerHTML =
+        '<div>Дней: <b class="accent">' + days + '</b></div>' +
+        '<div>Недель: <b>' + weeks + '</b></div>' +
+        '<div>Месяцев: <b>' + months + '</b></div>' +
+        '<div>Лет: <b>' + years + '</b></div>';
+    }
+    $("d1").addEventListener("change", calc);
+    $("d2").addEventListener("change", calc);
+    calc();
+  }
+
+  function toolBase(body){
+    body.innerHTML =
+      '<div class="tool-row">' +
+      '<label class="tool-label">Число<input type="text" id="bsNum" value="255" class="field mono"></label>' +
+      '<label class="tool-label">Из системы<select id="bsFrom" class="field"><option value="10">10 (десятичная)</option><option value="2">2 (двоичная)</option><option value="8">8 (восьмеричная)</option><option value="16">16 (шестнадцатеричная)</option></select></label>' +
+      '<div class="tool-result" id="bsResult">—</div>' +
+      '</div>';
+
+    function calc(){
+      var val = $("bsNum").value.trim();
+      var from = parseInt($("bsFrom").value, 10);
+      var n;
+      try{
+        n = parseInt(val, from);
+        if(isNaN(n)) throw 0;
+      }catch(e){ $("bsResult").textContent = "некорректное число"; return; }
+      $("bsResult").innerHTML =
+        '<div>10: <b class="accent">' + n.toString(10) + '</b></div>' +
+        '<div>2: <b>' + n.toString(2) + '</b></div>' +
+        '<div>8: <b>' + n.toString(8) + '</b></div>' +
+        '<div>16: <b>' + n.toString(16).toUpperCase() + '</b></div>';
+    }
+    $("bsNum").addEventListener("input", calc);
+    $("bsFrom").addEventListener("change", calc);
+    calc();
+  }
+
+  function toolStats(body){
+    body.innerHTML =
+      '<div class="tool-row">' +
+      '<label class="tool-label">Числа (через запятую или пробел)<textarea id="stNums" class="field mono">1, 2, 3, 4, 5, 6, 7, 8, 9, 10</textarea></label>' +
+      '<div class="tool-result" id="stResult">—</div>' +
+      '</div>';
+
+    function calc(){
+      var raw = $("stNums").value;
+      var nums = raw.split(/[,\s]+/).map(parseFloat).filter(function(n){ return !isNaN(n); });
+      if(nums.length === 0){ $("stResult").textContent = "нет чисел"; return; }
+      var sum = nums.reduce(function(a,b){ return a + b; }, 0);
+      var mean = sum / nums.length;
+      var sorted = nums.slice().sort(function(a,b){ return a - b; });
+      var median = nums.length % 2 === 0
+        ? (sorted[nums.length/2 - 1] + sorted[nums.length/2]) / 2
+        : sorted[Math.floor(nums.length/2)];
+      var variance = nums.reduce(function(a,b){ return a + Math.pow(b - mean, 2); }, 0) / nums.length;
+      var std = Math.sqrt(variance);
+      $("stResult").innerHTML =
+        '<div>Количество: <b>' + nums.length + '</b></div>' +
+        '<div>Сумма: <b>' + sum.toFixed(4) + '</b></div>' +
+        '<div>Среднее: <b class="accent">' + mean.toFixed(4) + '</b></div>' +
+        '<div>Медиана: <b>' + median.toFixed(4) + '</b></div>' +
+        '<div>Минимум: <b>' + sorted[0] + '</b></div>' +
+        '<div>Максимум: <b>' + sorted[sorted.length-1] + '</b></div>' +
+        '<div>Ст. отклонение: <b>' + std.toFixed(4) + '</b></div>' +
+        '<div>Дисперсия: <b>' + variance.toFixed(4) + '</b></div>';
+    }
+    $("stNums").addEventListener("input", calc);
+    calc();
+  }
+
+  function toolConvert(body){
+    body.innerHTML =
+      '<div class="tool-row">' +
+      '<label class="tool-label">Значение<input type="number" id="cvVal" value="100" class="field" inputmode="decimal"></label>' +
+      '<label class="tool-label">Единица<select id="cvUnit" class="field">' +
+        '<optgroup label="Длина"><option value="km">км</option><option value="m">м</option><option value="cm">см</option><option value="mm">мм</option><option value="mi">мили</option><option value="ft">футы</option><option value="in">дюймы</option></optgroup>' +
+        '<optgroup label="Вес"><option value="kg">кг</option><option value="g">г</option><option value="lb">фунты</option><option value="oz">унции</option></optgroup>' +
+        '<optgroup label="Температура"><option value="c">°C</option><option value="f">°F</option><option value="k">K</option></optgroup>' +
+      '</select></label>' +
+      '<div class="tool-result" id="cvResult">—</div>' +
+      '</div>';
+
+    var factors = {
+      km: 1000, m: 1, cm: 0.01, mm: 0.001,
+      mi: 1609.344, ft: 0.3048, in: 0.0254,
+      kg: 1, g: 0.001, lb: 0.453592, oz: 0.0283495
+    };
+
+    function calc(){
+      var v = parseFloat($("cvVal").value);
+      var u = $("cvUnit").value;
+      if(isNaN(v)){ $("cvResult").textContent = "введи число"; return; }
+      var out = "";
+
+      if(u === "c" || u === "f" || u === "k"){
+        var c;
+        if(u === "c") c = v;
+        else if(u === "f") c = (v - 32) * 5 / 9;
+        else c = v - 273.15;
+        out =
+          '<div>°C: <b class="accent">' + c.toFixed(2) + '</b></div>' +
+          '<div>°F: <b>' + (c * 9/5 + 32).toFixed(2) + '</b></div>' +
+          '<div>K: <b>' + (c + 273.15).toFixed(2) + '</b></div>';
+      } else {
+        var base = v * factors[u];
+        if(["km","m","cm","mm","mi","ft","in"].indexOf(u) !== -1){
+          out =
+            '<div>м: <b class="accent">' + base.toFixed(4) + '</b></div>' +
+            '<div>км: <b>' + (base / 1000).toFixed(6) + '</b></div>' +
+            '<div>см: <b>' + (base * 100).toFixed(2) + '</b></div>' +
+            '<div>мм: <b>' + (base * 1000).toFixed(2) + '</b></div>' +
+            '<div>мили: <b>' + (base / 1609.344).toFixed(6) + '</b></div>' +
+            '<div>футы: <b>' + (base / 0.3048).toFixed(4) + '</b></div>' +
+            '<div>дюймы: <b>' + (base / 0.0254).toFixed(4) + '</b></div>';
+        } else {
+          out =
+            '<div>кг: <b class="accent">' + base.toFixed(4) + '</b></div>' +
+            '<div>г: <b>' + (base * 1000).toFixed(2) + '</b></div>' +
+            '<div>фунты: <b>' + (base / 0.453592).toFixed(4) + '</b></div>' +
+            '<div>унции: <b>' + (base / 0.0283495).toFixed(4) + '</b></div>';
+        }
+      }
+      $("cvResult").innerHTML = out;
+    }
+    $("cvVal").addEventListener("input", calc);
+    $("cvUnit").addEventListener("change", calc);
+    calc();
+  }
+
+  function toolProg(body){
+    body.innerHTML =
+      '<div class="tool-row">' +
+      '<label class="tool-label">A<input type="text" id="pgA" value="0xFF" class="field mono"></label>' +
+      '<label class="tool-label">B<input type="text" id="pgB" value="0b1010" class="field mono"></label>' +
+      '<div class="tool-result" id="pgResult">—</div>' +
+      '</div>';
+
+    function parseNum(s){
+      s = String(s).trim();
+      if(/^0x/i.test(s)) return parseInt(s, 16);
+      if(/^0b/i.test(s)) return parseInt(s, 2);
+      if(/^0o/i.test(s)) return parseInt(s, 8);
+      return parseInt(s, 10);
+    }
+
+    function calc(){
+      var a = parseNum($("pgA").value);
+      var b = parseNum($("pgB").value);
+      if(isNaN(a) || isNaN(b)){ $("pgResult").textContent = "ошибка в числах"; return; }
+      $("pgResult").innerHTML =
+        '<div>A & B = <b class="accent">' + (a & b) + '</b> (0x' + (a & b).toString(16).toUpperCase() + ')</div>' +
+        '<div>A | B = <b>' + (a | b) + '</b></div>' +
+        '<div>A ^ B = <b>' + (a ^ b) + '</b></div>' +
+        '<div>~A = <b>' + (~a) + '</b></div>' +
+        '<div>A << 1 = <b>' + (a << 1) + '</b></div>' +
+        '<div>A >> 1 = <b>' + (a >> 1) + '</b></div>' +
+        '<div>A + B = <b>' + (a + b) + '</b></div>';
+    }
+    $("pgA").addEventListener("input", calc);
+    $("pgB").addEventListener("input", calc);
+    calc();
+  }
+
+  function toolUnits(body){
+    toolConvert(body);
+    $("toolTitle").textContent = "Единицы";
+  }
+
+  // ============================================================
+  // LONG PRESS — EDIT BUTTON
+  // ============================================================
+  var longPressTimer = null;
+  var longPressFired = false;
+
+  keypad.addEventListener("pointerdown", function(e){
+    var btn = e.target.closest(".btn");
+    if(!btn) return;
+    if(btn.dataset.num === undefined) return;
+    longPressFired = false;
+    longPressTimer = setTimeout(function(){
+      longPressFired = true;
+      openButtonEditor(btn);
+    }, 700);
+  });
+
+  function cancelLongPress(){
+    if(longPressTimer){
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  }
+
+  keypad.addEventListener("pointerup", cancelLongPress);
+  keypad.addEventListener("pointercancel", cancelLongPress);
+  keypad.addEventListener("pointerleave", cancelLongPress);
+
+  // Блокируем клик если был долгое нажатие
+  keypad.addEventListener("click", function(e){
+    if(longPressFired){
+      e.stopPropagation();
+      e.preventDefault();
+      longPressFired = false;
+      return;
+    }
+  }, true);
+
+  var ICONS = {
+    star: '<svg class="ic" viewBox="0 0 24 24"><polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9"/></svg>',
+    heart: '<svg class="ic" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21l7.7-7.6 1.1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>',
+    sun: '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="5" y1="5" x2="6" y2="6"/><line x1="18" y1="18" x2="19" y2="19"/><line x1="5" y1="19" x2="6" y2="18"/><line x1="18" y1="6" x2="19" y2="5"/></svg>',
+    moon: '<svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8a9 9 0 1 1-9.8-9 7 7 0 0 0 9.8 9z"/></svg>',
+    cloud: '<svg class="ic" viewBox="0 0 24 24"><path d="M18 18a4 4 0 0 0 0-8 5 5 0 0 0-9.5-1.5A4 4 0 0 0 5 18h13z"/></svg>',
+    bolt: '<svg class="ic" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>',
+    circle: '<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>',
+    square: '<svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>',
+    lock: '<svg class="ic" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+    key: '<svg class="ic" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8 2 2-2 2 2 2-2 2-2-2-2 2"/></svg>'
+  };
+
+  function openButtonEditor(btn){
+    playClick("op");
+    // кастомный overlay, а не prompt
+    var overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(10px)";
+    var box = document.createElement("div");
+    box.style.cssText = "background:" + getComputedStyle(document.documentElement).getPropertyValue("--bg") + ";border-radius:16px;padding:20px;max-width:360px;width:100%;color:" + getComputedStyle(document.documentElement).getPropertyValue("--display-text");
+    box.innerHTML =
+      '<div style="font-size:16px;font-weight:600;margin-bottom:14px">Редактор кнопки</div>' +
+      '<div style="font-size:13px;color:' + getComputedStyle(document.documentElement).getPropertyValue("--btn-func-text") + ';margin-bottom:14px">Выбери что поставить</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px" id="edIcons">' +
+        Object.keys(ICONS).map(function(name){
+          return '<button data-icon="' + name + '" style="aspect-ratio:1;border:1px solid ' + getComputedStyle(document.documentElement).getPropertyValue("--rule") + ';border-radius:10px;background:' + getComputedStyle(document.documentElement).getPropertyValue("--btn-func-bg") + ';color:' + getComputedStyle(document.documentElement).getPropertyValue("--accent") + ';cursor:pointer;display:flex;align-items:center;justify-content:center;padding:6px">' + ICONS[name] + '</button>';
+        }).join("") +
+      '</div>' +
+      '<input type="text" id="edText" value="' + btn.textContent.trim() + '" style="width:100%;height:44px;padding:0 14px;background:' + getComputedStyle(document.documentElement).getPropertyValue("--btn-func-bg") + ';color:' + getComputedStyle(document.documentElement).getPropertyValue("--display-text") + ';border:1px solid ' + getComputedStyle(document.documentElement).getPropertyValue("--rule") + ';border-radius:10px;font-size:15px;margin-bottom:14px;font-family:inherit" placeholder="свой текст">' +
+      '<div style="display:flex;gap:8px">' +
+        '<button id="edSave" style="flex:1;height:44px;background:' + getComputedStyle(document.documentElement).getPropertyValue("--accent") + ';color:' + getComputedStyle(document.documentElement).getPropertyValue("--btn-eq-text") + ';border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">сохранить</button>' +
+        '<button id="edCancel" style="flex:1;height:44px;background:transparent;color:' + getComputedStyle(document.documentElement).getPropertyValue("--btn-func-text") + ';border:1px solid ' + getComputedStyle(document.documentElement).getPropertyValue("--rule") + ';border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">отмена</button>' +
+      '</div>';
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    var selectedIcon = null;
+    box.querySelectorAll("[data-icon]").forEach(function(el){
+      el.addEventListener("click", function(){
+        box.querySelectorAll("[data-icon]").forEach(function(x){ x.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue("--rule"); });
+        el.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue("--accent");
+        selectedIcon = el.dataset.icon;
+      });
+    });
+
+    box.querySelector("#edSave").addEventListener("click", function(){
+      if(selectedIcon){
+        btn.innerHTML = ICONS[selectedIcon];
+      } else {
+        var txt = box.querySelector("#edText").value.trim();
+        if(txt) btn.textContent = txt;
+      }
+      saveButtons();
+      overlay.remove();
+      toast("кнопка изменена");
+    });
+
+    box.querySelector("#edCancel").addEventListener("click", function(){
+      overlay.remove();
+    });
+
+    overlay.addEventListener("click", function(e){
+      if(e.target === overlay) overlay.remove();
+    });
+  }
+
+  function saveButtons(){
+    try{
+      var buttons = [];
+      keypad.querySelectorAll(".btn").forEach(function(b){
+        buttons.push({
+          html: b.innerHTML,
+          text: b.textContent.trim()
+        });
+      });
+      localStorage.setItem(BTN_STORE, JSON.stringify({ keys: buttons }));
+    }catch(e){}
+  }
+
+  function loadButtons(){
+    try{
+      var raw = localStorage.getItem(BTN_STORE);
+      if(!raw) return;
+      var d = JSON.parse(raw);
+      if(!d.keys) return;
+      var btns = keypad.querySelectorAll(".btn");
+      d.keys.forEach(function(item, i){
+        if(!btns[i]) return;
+        if(item.html) btns[i].innerHTML = item.html;
+      });
+    }catch(e){}
+  }
+
+  // ============================================================
+  // COPY ON DISPLAY TAP
+  // ============================================================
+  mainEl.addEventListener("click", function(){
+    var text = state.result;
+    if(!text || text === "0") return;
+    function done(){ toast("скопировано"); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(function(){ fallbackCopy(text, done); });
+    } else {
+      fallbackCopy(text, done);
+    }
+  });
+
+  function fallbackCopy(text, done){
+    try{
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      done();
+    }catch(e){}
+  }
+
+  // ============================================================
+  // ANGLE / BASE TOGGLE
+  // ============================================================
+  angBadge.addEventListener("click", function(){
+    var modes = ["DEG", "RAD", "GRAD"];
+    var i = modes.indexOf(state.angle);
+    state.angle = modes[(i + 1) % 3];
+    updateDisplay();
+    save();
+    toast("углы: " + state.angle);
+    playClick("op");
+  });
+
+  baseBadge.addEventListener("click", function(){
+    var modes = ["DEC", "HEX", "OCT", "BIN"];
+    var i = modes.indexOf(state.base);
+    state.base = modes[(i + 1) % 4];
+    updateDisplay();
+    save();
+    toast("система: " + state.base);
+    playClick("op");
+  });
+
+  // MEMORY quick actions
+  memInd.addEventListener("click", function(){
+    var op = prompt("Память: M+, M-, MR, MC", "M+");
+    if(!op) return;
+    op = op.toUpperCase();
+    var cur = parseFloat(state.result) || 0;
+    if(op === "M+" || op === "M-"){ state.memory += (op === "M+" ? cur : -cur); state.memActive = true; toast("M = " + state.memory); }
+    else if(op === "MR"){ state.expression = String(state.memory); state.result = String(state.memory); }
+    else if(op === "MC"){ state.memory = 0; state.memActive = false; toast("память очищена"); }
+    updateDisplay();
+    save();
+  });
+
+  // ============================================================
+  // KEYBOARD (PC)
+  // ============================================================
+  document.addEventListener("keydown", function(e){
+    if(document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA" || document.activeElement.tagName === "SELECT")) return;
+    if(document.querySelector(".panel.on") || toolsMenu.classList.contains("on")){
+      if(e.key === "Escape"){ closeAllPanels(); }
+      return;
+    }
+
+    var k = e.key;
+    if(/^[0-9]$/.test(k)){ insert(k); playClick("num"); }
+    else if(k === "." || k === ","){ insert("."); playClick("num"); }
+    else if(k === "+" || k === "-" || k === "*" || k === "/"){ insert(k); playClick("op"); }
+    else if(k === "Enter" || k === "="){ e.preventDefault(); evaluate(); }
+    else if(k === "Backspace"){ e.preventDefault(); deleteLast(); }
+    else if(k === "Escape"){ clearAll(); }
+    else if(k === "(" || k === ")"){ insertParen(); }
+    else if(k === "^"){ insert("^"); playClick("op"); }
+    else if(k === "%"){ insertPercent(); }
+    else if(k === "!"){ insert("!"); playClick("op"); }
+  });
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  load();
+  applyTheme(state.theme);
+  updateToggles();
+  soundEnabled = state.soundOn;
+  volume = state.volume;
+  $("volSlider").value = state.volume * 100;
+  $("valVol").textContent = Math.round(state.volume * 100) + "%";
+  $("blurSlider").value = state.blur;
+  $("valBlur").textContent = state.blur + "px";
+  document.documentElement.style.setProperty("--blur", state.blur + "px");
+
+  // sync color labels
+  ["colBg","colBtn","colBtnText","colOp","colEq","colFunc"].forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    var labelId = "val" + id.charAt(3).toUpperCase() + id.slice(4);
+    var label = document.getElementById(labelId);
+    if(label) label.textContent = el.value;
+  });
+
+  updateDisplay();
+  loadButtons();
+  updateChipsActive();
+
+  // Telegram Mini App
+  try{
+    var tg = window.Telegram && window.Telegram.WebApp;
+    if(tg){
+      tg.ready(); tg.expand();
+      if(tg.disableVerticalSwipes) tg.disableVerticalSwipes();
+      if(tg.setHeaderColor) tg.setHeaderColor("#000000");
+      if(tg.setBackgroundColor) tg.setBackgroundColor("#000000");
+    }
+  }catch(e){}
+
+})();
+</script>
+</body>
+</html>
